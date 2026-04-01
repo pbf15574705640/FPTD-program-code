@@ -5,6 +5,10 @@ weather/
 LICENSE
 README.md
 
+target/
+
 out/
 
 offline_data/
+
+运行指南.md
