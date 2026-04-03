@@ -19,50 +19,46 @@ public class Main {
      * @param args 命令行参数
      * @throws InterruptedException 线程中断异常
      */
+    // 重复实验次数（论文要求10次取平均）
+    private static final int REPEAT_TIMES = 10;
+
     public static void main(String[] args) throws InterruptedException {
-        // 如果开启执行信息打印，则输出启动信息
-        if(Params.IS_PRINT_EXE_INFO) {
-            System.out.println("Starting optimal TD...");
-        }
+        final String sensingDataFile = Params.sensingDataFile;
+        final String truthFile = Params.truthFile;
+        boolean isCategoricalData = Params.isCategoricalData;
 
-        
-        // 从Params类获取配置参数
-        final String sensingDataFile = Params.sensingDataFile;  // 感知数据文件路径
-        final String truthFile = Params.truthFile;              // 真实数据文件路径
-        boolean isCategoricalData = Params.isCategoricalData;  // 是否为分类数据标志
-
-        // 初始化工作线程数为-1（表示自动确定）
         int requiredWorkerNum = -1;
-        // 创建数据管理器，用于读取和管理数据
         DataManager dataManager = new DataManager(sensingDataFile, truthFile, isCategoricalData, requiredWorkerNum);
-        // 获取工作线程数量和考试数量
         final int workerNum = dataManager.sensingDataMatrix.size();
         final int examNum = dataManager.sensingDataMatrix.get(0).size();
 
-        // 打离线阶段开始信息
-        if(Params.IS_PRINT_EXE_INFO){
-            System.out.println("Finish to read sensing data from hard disk");
-            System.out.println("Start to the offline phase");
-        }
-
-        // 定义作业名称
         final String jobName = "TD_optimal";
 
-        // 执行离线阶段
+        System.out.println("=== 实验配置 ===");
+        System.out.println("数据集: " + sensingDataFile);
+        System.out.println("服务器数 N: " + Params.NUM_SERVER);
+        System.out.println("迭代次数: " + Params.ITER_TD);
+        System.out.println("Worker数: " + workerNum + ", Exam数: " + examNum);
+        System.out.println("重复次数: " + REPEAT_TIMES);
+        System.out.println("================");
+
+        // 离线阶段只需执行一次
         runTDOffline(workerNum, examNum, jobName);
 
-        // 打印离线阶段完成信息
-        if(Params.IS_PRINT_EXE_INFO){
-            System.out.println("Finish to offline phase");
+        // 在线阶段重复执行REPEAT_TIMES次，取平均时间
+        long totalOnlineTime = 0;
+        for (int i = 0; i < REPEAT_TIMES; i++) {
+            long onlineStart = System.currentTimeMillis();
+            runTDOnline(workerNum, examNum, jobName, dataManager);
+            long onlineTime = System.currentTimeMillis() - onlineStart;
+            totalOnlineTime += onlineTime;
+            System.out.println("第" + (i + 1) + "次在线阶段耗时: " + onlineTime + " ms");
         }
 
-        // 执行在线阶段
-        runTDOnline(workerNum, examNum, jobName, dataManager);
-
-        // 打印在线阶段完成信息
-        if(Params.IS_PRINT_EXE_INFO){
-            System.out.println("Finish to online phase");
-        }
+        double avgOnlineTime = (double) totalOnlineTime / REPEAT_TIMES;
+        System.out.println("================");
+        System.out.println("在线阶段平均耗时: " + String.format("%.2f", avgOnlineTime) + " ms");
+        System.out.println("在线阶段平均耗时: " + String.format("%.4f", avgOnlineTime / 1000.0) + " s");
     }
 
     private static void runTDOffline(int workerNum, int examNum, String jobName) {
