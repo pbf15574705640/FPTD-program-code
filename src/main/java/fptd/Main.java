@@ -42,23 +42,32 @@ public class Main {
         System.out.println("重复次数: " + REPEAT_TIMES);
         System.out.println("================");
 
-        // 离线阶段只需执行一次
-        runTDOffline(workerNum, examNum, jobName);
-
-        // 在线阶段重复执行REPEAT_TIMES次，取平均时间
+        // 离线和在线阶段各重复REPEAT_TIMES次，取平均时间
+        long totalOfflineTime = 0;
         long totalOnlineTime = 0;
+
         for (int i = 0; i < REPEAT_TIMES; i++) {
+            // 离线阶段计时
+            long offlineStart = System.currentTimeMillis();
+            runTDOffline(workerNum, examNum, jobName);
+            long offlineTime = System.currentTimeMillis() - offlineStart;
+            totalOfflineTime += offlineTime;
+
+            // 在线阶段计时
             long onlineStart = System.currentTimeMillis();
             runTDOnline(workerNum, examNum, jobName, dataManager);
             long onlineTime = System.currentTimeMillis() - onlineStart;
             totalOnlineTime += onlineTime;
-            System.out.println("第" + (i + 1) + "次在线阶段耗时: " + onlineTime + " ms");
+
+            System.out.println("第" + (i + 1) + "次 | 离线: " + offlineTime + " ms | 在线: " + onlineTime + " ms");
         }
 
+        double avgOfflineTime = (double) totalOfflineTime / REPEAT_TIMES;
         double avgOnlineTime = (double) totalOnlineTime / REPEAT_TIMES;
         System.out.println("================");
-        System.out.println("在线阶段平均耗时: " + String.format("%.2f", avgOnlineTime) + " ms");
-        System.out.println("在线阶段平均耗时: " + String.format("%.4f", avgOnlineTime / 1000.0) + " s");
+        System.out.println("离线阶段平均耗时: " + String.format("%.2f", avgOfflineTime) + " ms  (" + String.format("%.4f", avgOfflineTime / 1000.0) + " s)");
+        System.out.println("在线阶段平均耗时: " + String.format("%.2f", avgOnlineTime) + " ms  (" + String.format("%.4f", avgOnlineTime / 1000.0) + " s)");
+        System.out.println("总平均耗时:       " + String.format("%.2f", avgOfflineTime + avgOnlineTime) + " ms  (" + String.format("%.4f", (avgOfflineTime + avgOnlineTime) / 1000.0) + " s)");
     }
 
     private static void runTDOffline(int workerNum, int examNum, String jobName) {
