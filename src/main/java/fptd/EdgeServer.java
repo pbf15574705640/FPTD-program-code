@@ -22,7 +22,34 @@ public class EdgeServer {
 
     private BufferedReader fileReader;
 
+    // 通信开销统计（全局静态变量，所有服务器共享）
+    private static long totalBytesSent = 0;
+    private static final Object lock = new Object();
 
+    // 内部类：字节计数输出流（不占用额外内存）
+    private static class CountingOutputStream extends FilterOutputStream {
+        public CountingOutputStream(OutputStream out) {
+            super(out);
+        }
+        @Override
+        public void write(int b) throws IOException {
+            out.write(b);
+            synchronized (lock) { totalBytesSent++; }
+        }
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException {
+            out.write(b, off, len);
+            synchronized (lock) { totalBytesSent += len; }
+        }
+    }
+
+    public static long getTotalBytesSent() {
+        synchronized (lock) { return totalBytesSent; }
+    }
+
+    public static void resetStatistics() {
+        synchronized (lock) { totalBytesSent = 0; }
+    }
 
     public EdgeServer(boolean isKing, int idx, String jobName) {
         this.isKing = isKing;
@@ -71,7 +98,7 @@ public class EdgeServer {
             for (int i = 0; i < Params.NUM_SERVER - 1; i++) { // except the king server
                 Socket socket = serverSocket.accept(); // wait for other servers' connection
                 networkReaders.add(new ObjectInputStream(socket.getInputStream()));
-                networkWriters.add(new ObjectOutputStream(socket.getOutputStream()));
+                networkWriters.add(new ObjectOutputStream(new CountingOutputStream(socket.getOutputStream())));
                 if(Params.IS_PRINT_EXE_INFO) {
                     System.out.println("King get I/O connection from " + socket.getRemoteSocketAddress());
                 }
@@ -80,7 +107,7 @@ public class EdgeServer {
                 try {
                     Socket socket = serverSocket.accept();
                     networkReaders.set(0, new ObjectInputStream(socket.getInputStream()));
-                    networkWriters.set(0, new ObjectOutputStream(socket.getOutputStream()));
+                    networkWriters.set(0, new ObjectOutputStream(new CountingOutputStream(socket.getOutputStream())));
                     if(Params.IS_PRINT_EXE_INFO) {
                         System.out.println("King get I/O connection from itself " + socket.getRemoteSocketAddress());
                     }
@@ -90,7 +117,7 @@ public class EdgeServer {
             }).start();
         }
         Socket socket = new Socket(Params.IP_King, Params.Port_King); //connect to the king as a server
-        this.writerToKing = new ObjectOutputStream(socket.getOutputStream());
+        this.writerToKing = new ObjectOutputStream(new CountingOutputStream(socket.getOutputStream()));
         this.readerFromKing = new ObjectInputStream(socket.getInputStream());
     }
 

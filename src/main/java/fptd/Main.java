@@ -64,10 +64,19 @@ public class Main {
 
         double avgOfflineTime = (double) totalOfflineTime / REPEAT_TIMES;
         double avgOnlineTime = (double) totalOnlineTime / REPEAT_TIMES;
+
+        // 计算通信开销
+        double totalCommMB = (double) EdgeServer.getTotalBytesSent() / (1024.0 * 1024.0);
+        double avgCommMB = totalCommMB / REPEAT_TIMES;
+
         System.out.println("================");
         System.out.println("离线阶段平均耗时: " + String.format("%.2f", avgOfflineTime) + " ms  (" + String.format("%.4f", avgOfflineTime / 1000.0) + " s)");
         System.out.println("在线阶段平均耗时: " + String.format("%.2f", avgOnlineTime) + " ms  (" + String.format("%.4f", avgOnlineTime / 1000.0) + " s)");
         System.out.println("总平均耗时:       " + String.format("%.2f", avgOfflineTime + avgOnlineTime) + " ms  (" + String.format("%.4f", (avgOfflineTime + avgOnlineTime) / 1000.0) + " s)");
+        System.out.println("通信开销(单次平均): " + String.format("%.2f", avgCommMB) + " MB");
+        System.out.println("通信开销(累计总计): " + String.format("%.2f", totalCommMB) + " MB");
+
+        EdgeServer.resetStatistics();
     }
 
     private static void runTDOffline(int workerNum, int examNum, String jobName) {
