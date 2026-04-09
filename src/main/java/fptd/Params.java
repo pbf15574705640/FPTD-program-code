@@ -48,16 +48,16 @@ public class Params {
 //    public final static boolean isCategoricalData = true;
 
     // 注释的数据集配置（Dog Data）
-//        public final static String sensingDataFile = "datasets/s4_Dog_data/answer.csv";
-//        public final static String truthFile = "datasets/s4_Dog_data/truth.csv";
-//        public final static boolean isCategoricalData = true;
+       public final static String sensingDataFile = "datasets/s4_Dog_data/answer.csv";
+       public final static String truthFile = "datasets/s4_Dog_data/truth.csv";
+       public final static boolean isCategoricalData = true;
 
 
 
-    // 当前使用的数据集配置（Weather Data）
-        public final static String sensingDataFile = "datasets/weather/answer.csv";    // 传感器数据文件路径
-        public final static String truthFile = "datasets/weather/truth.csv";           // 真实数据文件路径
-        public final static boolean isCategoricalData = false;                         // 是否为分类数据标志
+    // // 当前使用的数据集配置（Weather Data）
+    //     public final static String sensingDataFile = "datasets/weather/answer.csv";    // 传感器数据文件路径
+    //     public final static String truthFile = "datasets/weather/truth.csv";           // 真实数据文件路径
+    //     public final static boolean isCategoricalData = false;                         // 是否为分类数据标志
 }
 
 

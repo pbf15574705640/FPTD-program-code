@@ -11,28 +11,46 @@ import java.util.*;
 
 import static fptd.Params.*;
 
+/**
+ * TDOnlineOptimal类实现了在线优化的标签数据(TD)处理算法
+ * 用于在多服务器环境下安全地处理和计算标签数据的秘密共享
+ */
 public class TDOnlineOptimal {
-    private int workerNum;
-    private int examNum;
+    private int workerNum;    // 工人数量
+    private int examNum;      // 每个工人的考试/标签数量
 
+    /**
+     * 构造函数，初始化工人数量和每个工人的考试数量
+     * @param workerNum 工人数量
+     * @param examNumPerWorker 每个工人的考试数量
+     */
     public TDOnlineOptimal(int workerNum, int examNumPerWorker) {
         this.workerNum = workerNum;
         this.examNum = examNumPerWorker;
     }
 
-    private List<List<Share>> initTruth(){
+    /**
+     * 初始化真值，使用Shamir秘密共享算法生成每个服务器的秘密份额
+     * @return 返回一个二维列表，包含每个服务器的秘密份额
+     */
+    private List<List<Share>> initTruth(List<List<BigInteger>> worker2labels){
         List<List<Share>> result = new ArrayList<>();//shares of truth for each server
         for(int i = 0; i < Params.NUM_SERVER; i++){
             result.add(new ArrayList<>());
         }
-        Random rand = new Random();
-        rand.setSeed(1);
         ShamirSharing sharing = new ShamirSharing();
-        for(int i = 0; i < examNum; i++){
-            BigInteger truth = new BigInteger(2, rand);
-            truth = truth.abs();
-            truth = truth.multiply(BigInteger.valueOf(PRECISE_ROUND));
-//            System.out.println("init truth: " + truth);
+        for(int examIdx = 0; examIdx < examNum; examIdx++){
+            // 用所有工人对该exam的答案均值作为初始真值
+            BigInteger sum = BigInteger.ZERO;
+            int count = 0;
+            for(List<BigInteger> workerLabels : worker2labels){
+                BigInteger label = workerLabels.get(examIdx);
+                if(label != null){
+                    sum = sum.add(label);
+                    count++;
+                }
+            }
+            BigInteger truth = count > 0 ? sum.divide(BigInteger.valueOf(count)) : BigInteger.ZERO;
             List<Share> shares = sharing.getShares(truth);
             for(int serverIdx = 0; serverIdx < shares.size(); serverIdx++){
                 result.get(serverIdx).add(shares.get(serverIdx));
@@ -93,7 +111,7 @@ public class TDOnlineOptimal {
         List<List<List<Share>>> server2w2e2shares = new ArrayList<>();
         List<List<List<Share>>> server2e2w2shares = new ArrayList<>();
         getSharesForEachServer(worker2labels, server2w2e2shares, server2e2w2shares);
-        List<List<Share>> truthSharesForEachServer = initTruth();
+        List<List<Share>> truthSharesForEachServer = initTruth(worker2labels);
 
         List<EdgeServer> servers = new ArrayList<EdgeServer>();
         for(int i = 0; i < Params.NUM_SERVER; i++){
